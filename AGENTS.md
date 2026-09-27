@@ -1,9 +1,19 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# Project-Specific Rules for Hotel Management System
 
-# This is NOT the Next.js you know
+When assisting with this codebase, ALWAYS adhere to the following design patterns and constraints:
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+## 1. UI Components & Interactions
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+- **Custom Dialogs:** NEVER use native browser dialogs like `window.confirm()`, `window.alert()`, or `window.prompt()`. Always implement custom modal popups (typically powered by Framer Motion for smooth `AnimatePresence` transitions).
+- **Date Picking:** ALWAYS use the custom-built `DatePicker` component (`@/components/ui/date-picker`) for date selections. Do not use standard `<input type="date">`.
 
-<!-- END:nextjs-agent-rules -->
+## 2. Styling & Aesthetics
+
+- **Button Styling:** All buttons must have consistent hover and active state animations to maintain a premium feel. Standard button utility classes include:
+  `transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0 hover:shadow-md`
+- **Modern Design:** Rely heavily on TailwindCSS to create vibrant, clean interfaces with rounded corners, subtle shadows, and good use of whitespace.
+
+## 3. Data & Forms
+
+- **Validation:** All forms must have robust validation. Use `react-hook-form` paired with `zod` resolvers to validate inputs before submission.
+- **Feedback:** Use `react-hot-toast` to provide immediate success or error feedback to the user upon actions (e.g., saving, deleting).

@@ -25,14 +25,49 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
     await connectToDatabase();
-    // Fetch bookings sorted by newest first
+
+    if (id) {
+      const booking = await Booking.findById(id);
+      if (!booking) {
+        return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      }
+      return NextResponse.json(booking, { status: 200 });
+    }
+
+    // Fetch all bookings sorted by newest first
     const bookings = await Booking.find().sort({ createdAt: -1 });
     return NextResponse.json(bookings, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching bookings:", error);
     return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Booking ID is required" }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    
+    const deletedBooking = await Booking.findByIdAndDelete(id);
+    if (!deletedBooking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "Booking deleted successfully" }, { status: 200 });
+  } catch (error: any) {
+    console.error("Error deleting booking:", error);
+    return NextResponse.json({ error: "Failed to delete booking" }, { status: 500 });
   }
 }

@@ -20,6 +20,7 @@ interface DatePickerProps {
   disabled?: boolean;
   dateFormat?: string;
   displayFormat?: string;
+  minDate?: Date | string;
 }
 
 export function DatePicker({
@@ -30,8 +31,24 @@ export function DatePicker({
   disabled,
   dateFormat = "yyyy-MM-dd",
   displayFormat = "dd MMM yyyy",
+  minDate,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
+
+  const parsedMinDate = React.useMemo(() => {
+    if (!minDate) return undefined;
+    if (minDate instanceof Date) {
+      const d = new Date(minDate);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    const d = new Date(minDate);
+    if (!isNaN(d.getTime())) {
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    return undefined;
+  }, [minDate]);
 
   const dateObj = React.useMemo(() => {
     if (!value) return undefined;
@@ -79,6 +96,7 @@ export function DatePicker({
           mode="single"
           selected={dateObj}
           onSelect={handleSelect}
+          disabled={parsedMinDate ? { before: parsedMinDate } : undefined}
         />
       </PopoverContent>
     </Popover>

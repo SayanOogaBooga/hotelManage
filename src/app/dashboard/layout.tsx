@@ -44,7 +44,7 @@ function SidebarContent({
         </div>
         {/* Close button for mobile only */}
         {onClose && (
-          <button className="md:hidden text-slate-500 p-1 hover:bg-slate-100 rounded-lg transition-colors" onClick={onClose}>
+          <button className="md:hidden text-slate-500 p-1 hover:bg-slate-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-95" onClick={onClose}>
             <X size={20} />
           </button>
         )}
@@ -58,7 +58,7 @@ function SidebarContent({
           return (
             <Link key={item.name} href={item.href} onClick={onClose}>
               <span className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all relative overflow-hidden group",
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all relative overflow-hidden group cursor-pointer hover:-translate-y-0.5 active:translate-y-0",
                 isActive 
                   ? "text-primary bg-primary/5" 
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -81,7 +81,7 @@ function SidebarContent({
 
       <div className="p-4 border-t border-slate-100">
         <Link href="/">
-          <span className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors">
+          <span className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0">
             <LogOut size={18} />
             Logout
           </span>
@@ -142,7 +142,7 @@ export default function DashboardLayout({
             </div>
             <span className="font-bold text-slate-800 text-sm">Heaven Valley</span>
           </div>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-all cursor-pointer hover:scale-110 active:scale-95">
             <Menu size={20} />
           </button>
         </div>

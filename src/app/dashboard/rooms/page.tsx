@@ -23,6 +23,8 @@ export default function RoomsManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [newRoomNumber, setNewRoomNumber] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("All");
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,6 +70,7 @@ export default function RoomsManagement() {
       if (res.ok) {
         toast.success(`Room ${newRoomNumber} added!`);
         setNewRoomNumber("");
+        setIsAddRoomModalOpen(false);
         fetchRooms();
       } else {
         const errorData = await res.json();
@@ -176,41 +179,51 @@ export default function RoomsManagement() {
 
   const getStatusBadge = (status: string) => {
     switch(status) {
-      case 'Available': return <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide">Available</span>;
-      case 'Occupied': return <span className="bg-rose-100 text-rose-800 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide">Occupied</span>;
-      case 'Maintenance': return <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wide">Maintenance</span>;
+      case 'Available': return <span className="bg-emerald-100 text-emerald-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-bold uppercase tracking-wide">Available</span>;
+      case 'Occupied': return <span className="bg-rose-100 text-rose-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-bold uppercase tracking-wide">Occupied</span>;
+      case 'Maintenance': return <span className="bg-amber-100 text-amber-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-bold uppercase tracking-wide">Maintenance</span>;
       default: return null;
     }
   };
+
+  const filteredRooms = rooms.filter(room => activeTab === "All" ? true : room.status === activeTab);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-3">
             <BedDouble className="text-primary" /> Room Management
           </h1>
-          <p className="text-slate-500 mt-1">Manage rooms, assign guests, and track occupancy.</p>
+          <p className="text-sm md:text-base text-slate-500 mt-1">Manage rooms, assign guests, and track occupancy.</p>
         </div>
         
-        <form onSubmit={handleAddRoom} className="flex gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
-          <input
-            type="text"
-            placeholder="Room Number (e.g. 101)"
-            value={newRoomNumber}
-            onChange={(e) => setNewRoomNumber(e.target.value)}
-            className="px-4 py-2 bg-transparent text-sm focus:outline-none w-48"
-          />
-          <button
-            type="submit"
-            disabled={isAdding || !newRoomNumber.trim()}
-            className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            {isAdding ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
-            Add Room
-          </button>
-        </form>
+        <button
+          onClick={() => setIsAddRoomModalOpen(true)}
+          className="bg-primary text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+        >
+          <Plus size={24} />
+          Add New Room
+        </button>
       </div>
+
+      {rooms.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {["All", "Available", "Occupied", "Maintenance"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === tab
+                  ? "bg-slate-800 text-white shadow-md scale-105"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:shadow hover:-translate-y-0.5 active:translate-y-0"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-slate-50">
         {isLoading ? (
@@ -221,12 +234,17 @@ export default function RoomsManagement() {
           <div className="p-12 text-center text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-sm">
             <BedDouble size={48} className="mx-auto mb-4 text-slate-300" />
             <p className="text-lg font-bold text-slate-700">No rooms found</p>
-            <p className="text-sm">Start by adding your first room using the form above.</p>
+            <p className="text-sm">Start by adding your first room using the "Add New Room" button above.</p>
+          </div>
+        ) : filteredRooms.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <BedDouble size={48} className="mx-auto mb-4 text-slate-300" />
+            <p className="text-lg font-bold text-slate-700">No {activeTab.toLowerCase()} rooms found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             <AnimatePresence>
-              {rooms.map((room) => (
+              {filteredRooms.map((room) => (
                 <motion.div
                   layout
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -235,88 +253,93 @@ export default function RoomsManagement() {
                   key={room._id}
                   className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col relative group"
                 >
-                  <div className="p-6 border-b border-slate-100 flex justify-between items-start">
+                  <div className="p-3 sm:p-6 border-b border-slate-100 flex justify-between items-start">
                     <div>
                       {getStatusBadge(room.status)}
-                      <h3 className="text-3xl font-black text-slate-800 mt-2">{room.roomNumber}</h3>
+                      <h3 className="text-xl sm:text-3xl font-black text-slate-800 mt-1 sm:mt-2">{room.roomNumber}</h3>
                     </div>
                     
                     <button 
                       onClick={() => confirmDelete(room._id)}
-                      className="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-100 transition-colors p-2 rounded-full"
+                      className="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-100 transition-all p-2 rounded-full cursor-pointer hover:scale-110 active:scale-95"
                       title="Delete Room"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
                   
-                  <div className="p-6 bg-slate-50 flex-1 flex flex-col justify-center">
+                  <div className="p-3 sm:p-6 bg-slate-50 flex-1 flex flex-col justify-center">
                     {room.status === "Occupied" ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <UserIcon size={18} />
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                            <UserIcon size={16} className="sm:hidden" />
+                            <UserIcon size={18} className="hidden sm:block" />
                           </div>
                           <div>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Guest</p>
-                            <p className="font-bold text-slate-700">{room.currentGuestName}</p>
+                            <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Guest</p>
+                            <p className="text-xs sm:text-base font-bold text-slate-700 leading-tight">{room.currentGuestName}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl border border-slate-100">
                           <div>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Check In</p>
                             <p className="text-xs font-semibold text-slate-600">
                               {room.checkInDate ? format(new Date(room.checkInDate), "dd MMM yy") : "N/A"}
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Check Out</p>
-                            <p className="text-xs font-semibold text-slate-600">
+                            <p className="text-[10px] sm:text-xs font-semibold text-slate-600">
                               {room.checkOutDate ? format(new Date(room.checkOutDate), "dd MMM yy") : "N/A"}
                             </p>
                           </div>
                         </div>
                       </div>
                     ) : room.status === "Maintenance" ? (
-                      <div className="text-center text-slate-400 font-medium">
+                      <div className="text-center text-slate-400 font-medium text-xs sm:text-base">
                         Room is currently under maintenance.
                       </div>
                     ) : (
-                      <div className="text-center text-slate-400 font-medium">
+                      <div className="text-center text-slate-400 font-medium text-xs sm:text-base">
                         Room is clean and ready for guests.
                       </div>
                     )}
                   </div>
 
-                  <div className="p-4 bg-white border-t border-slate-100 grid grid-cols-2 gap-2">
+                  <div className="p-3 sm:p-4 bg-white border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {room.status === "Available" ? (
                       <>
                         <button 
                           onClick={() => handleStatusChange(room._id, "Occupied")}
-                          className="col-span-2 bg-primary text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-green-700 transition-colors"
+                          className="col-span-1 sm:col-span-2 bg-primary text-white py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 hover:bg-green-700 transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
                         >
-                          <CheckCircle2 size={18} /> Assign Guest
+                          <CheckCircle2 size={16} className="sm:hidden"/>
+                          <CheckCircle2 size={18} className="hidden sm:block"/> 
+                          Assign Guest
                         </button>
                         <button 
                           onClick={() => handleStatusChange(room._id, "Maintenance")}
-                          className="col-span-2 text-slate-500 py-1 text-xs font-bold hover:text-amber-600 transition-colors uppercase tracking-wider"
+                          className="col-span-1 sm:col-span-2 text-slate-500 py-1 text-[10px] sm:text-xs font-bold hover:text-amber-600 transition-all uppercase tracking-wider cursor-pointer hover:scale-105 active:scale-95"
                         >
-                          Mark for Maintenance
+                          Maintenance
                         </button>
                       </>
                     ) : room.status === "Occupied" ? (
                       <button 
                         onClick={() => handleStatusChange(room._id, "Available")}
-                        className="col-span-2 bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+                        className="col-span-1 sm:col-span-2 bg-rose-100 text-rose-700 hover:bg-rose-200 transition-all py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 cursor-pointer hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0"
                       >
-                        <LogOut size={18} /> Check Out Guest
+                        <LogOut size={16} className="sm:hidden"/>
+                        <LogOut size={18} className="hidden sm:block"/> 
+                        Check Out
                       </button>
                     ) : (
                       <button 
                         onClick={() => handleStatusChange(room._id, "Available")}
-                        className="col-span-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+                        className="col-span-1 sm:col-span-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 cursor-pointer hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0"
                       >
-                         Mark as Available
+                         Mark Available
                       </button>
                     )}
                   </div>
@@ -364,7 +387,7 @@ export default function RoomsManagement() {
                   </div>
                   <div className="space-y-2 flex flex-col">
                     <label className="text-sm font-semibold text-slate-700">Check Out</label>
-                    <DatePicker value={checkOut} onChange={(_, date) => setCheckOut(date)} />
+                    <DatePicker value={checkOut} onChange={(_, date) => setCheckOut(date)} minDate={checkIn} />
                   </div>
                 </div>
               </div>
@@ -372,14 +395,14 @@ export default function RoomsManagement() {
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-2xl">
                 <button 
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors"
+                  className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleBookRoom}
                   disabled={isSavingBooking}
-                  className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                  className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
                 >
                   {isSavingBooking ? <RefreshCw size={18} className="animate-spin"/> : <CheckCircle2 size={18} />}
                   Confirm Booking
@@ -414,17 +437,73 @@ export default function RoomsManagement() {
               <div className="flex gap-3 w-full">
                 <button 
                   onClick={() => setDeleteConfirmId(null)}
-                  className="flex-1 py-3 px-4 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-3 px-4 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={executeDelete}
-                  className="flex-1 py-3 px-4 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-colors shadow-md shadow-rose-200"
+                  className="flex-1 py-3 px-4 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-all shadow-md shadow-rose-200 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                 >
                   Yes, Delete
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Add Room Modal */}
+      <AnimatePresence>
+        {isAddRoomModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200"
+            >
+              <div className="p-6 border-b border-slate-100">
+                <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+                  <Plus className="text-primary" /> Add New Room
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Enter the room number or name to create a new room.
+                </p>
+              </div>
+              
+              <form onSubmit={handleAddRoom}>
+                <div className="p-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Room Number</label>
+                    <input 
+                      type="text" 
+                      value={newRoomNumber}
+                      onChange={(e) => setNewRoomNumber(e.target.value)}
+                      placeholder="e.g. 101 or A-1"
+                      className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-700 bg-slate-50"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-2xl">
+                  <button 
+                    type="button"
+                    onClick={() => setIsAddRoomModalOpen(false)}
+                    className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isAdding || !newRoomNumber.trim()}
+                    className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    {isAdding ? <RefreshCw size={18} className="animate-spin"/> : <Plus size={18} />}
+                    Create Room
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

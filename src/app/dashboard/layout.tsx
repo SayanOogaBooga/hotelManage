@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
   BedDouble, 
@@ -30,6 +30,13 @@ function SidebarContent({
   pathname: string, 
   onClose?: () => void 
 }) {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    router.push("/");
+  };
+
   return (
     <>
       <div className="p-6 flex items-center justify-between gap-3">
@@ -80,12 +87,10 @@ function SidebarContent({
       </nav>
 
       <div className="p-4 border-t border-slate-100">
-        <Link href="/">
-          <span className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0">
-            <LogOut size={18} />
-            Logout
-          </span>
-        </Link>
+        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0">
+          <LogOut size={18} />
+          Logout
+        </button>
       </div>
     </>
   );

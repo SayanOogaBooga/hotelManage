@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Leaf, Lock, User, ArrowRight } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -15,15 +16,16 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     // For now, simple client-side validation to let you into the dashboard!
     // We can upgrade this to NextAuth + MongoDB later if you need multiple users.
     setTimeout(() => {
       setIsLoading(false);
       if (username === "admin" && password === "admin") {
+        document.cookie = "auth=true; path=/; max-age=86400"; // 1 day expiration
         router.push("/dashboard");
       } else {
-        alert("Invalid credentials. Try admin / admin");
+        toast.error("Invalid credentials.");
       }
     }, 800);
   };
@@ -34,7 +36,7 @@ export default function LoginPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-green-200/30 rounded-full blur-3xl" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-200/30 rounded-full blur-3xl" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
@@ -44,13 +46,19 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 text-primary shadow-inner">
             <Leaf size={32} strokeWidth={1.5} />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Heaven Valley</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium tracking-wide uppercase">Management Portal</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+            Heaven Valley
+          </h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium tracking-wide uppercase">
+            Management Portal
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-slate-700 ml-1">Username</label>
+            <label className="text-sm font-semibold text-slate-700 ml-1">
+              Username
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <User size={18} />
@@ -67,7 +75,9 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-slate-700 ml-1">Password</label>
+            <label className="text-sm font-semibold text-slate-700 ml-1">
+              Password
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <Lock size={18} />

@@ -225,6 +225,8 @@ export default function DashboardOverview() {
         </motion.div>
       </div>
 
+      {/* 3D Rooms section */}
+
       {data?.stats?.totalRooms > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}

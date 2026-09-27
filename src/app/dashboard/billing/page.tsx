@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { DatePicker } from "@/components/ui/date-picker";
 import toast from "react-hot-toast";
 import { ReceiptPrint } from "@/components/ReceiptPrint";
+import { playSuccessSound } from "@/lib/sounds";
 
 // Define the Zod Validation Schema
 const particularSchema = z.object({
@@ -155,6 +156,7 @@ export default function BillingPage() {
 
       if (res.ok) {
         setIsSaved(true);
+        playSuccessSound();
         toast.success("Bill saved successfully!");
         setShowPrintModal(true);
       } else {
@@ -173,7 +175,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto pb-24">
+    <div className="max-w-6xl mx-auto pb-24 print:pb-0 print:m-0 print:max-w-none">
       {/* --- WEB FORM UI (Hidden when printing) --- */}
       <div className="print:hidden space-y-6 md:space-y-8">
         <div className="flex flex-col gap-4">

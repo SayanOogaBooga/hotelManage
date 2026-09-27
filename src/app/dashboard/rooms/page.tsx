@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, BedDouble, RefreshCw, CalendarDays, User as UserIcon, LogOut, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import { playPopSound, playDeleteSound } from "@/lib/sounds";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -108,7 +109,10 @@ export default function RoomsManagement() {
       });
       
       if (res.ok) {
-        if (newStatus === "Available") toast.success("Room checked out and is now Available.");
+        if (newStatus === "Available") {
+          playPopSound();
+          toast.success("Room checked out and is now Available.");
+        }
       } else {
         throw new Error("Failed");
       }
@@ -140,6 +144,7 @@ export default function RoomsManagement() {
       });
 
       if (res.ok) {
+        playPopSound();
         toast.success(`Room ${selectedRoom.roomNumber} is now Occupied!`);
         setIsModalOpen(false);
         fetchRooms();
@@ -169,6 +174,7 @@ export default function RoomsManagement() {
         method: "DELETE",
       });
       if (res.ok) {
+        playDeleteSound();
         toast.success("Room deleted");
         setRooms(rooms.filter((r) => r._id !== id));
       }

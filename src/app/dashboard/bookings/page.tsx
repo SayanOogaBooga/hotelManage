@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ReceiptPrint } from "@/components/ReceiptPrint";
 import toast from "react-hot-toast";
+import { playDeleteSound } from "@/lib/sounds";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BookingsPage() {
@@ -37,6 +38,7 @@ export default function BookingsPage() {
     try {
       const res = await fetch(`/api/bookings?id=${id}`, { method: "DELETE" });
       if (res.ok) {
+        playDeleteSound();
         toast.success("Booking history deleted");
         setBookings(bookings.filter((b) => b._id !== id));
       } else {

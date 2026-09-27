@@ -31,7 +31,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-slate-50">
         {children}
-        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+        <div className="print:hidden">
+          <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+        </div>
         <script
           dangerouslySetInnerHTML={{
             __html: `

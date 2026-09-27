@@ -329,7 +329,7 @@ export default function BillingPage() {
             {/* Meta Info */}
             <div className="flex justify-between font-bold text-blue-900 text-sm mb-4">
               <div>Memo No. : <span className="text-black font-normal border-b border-black inline-block min-w-[150px]">{watch("memoNo")}</span></div>
-              <div>Date : <span className="text-black font-normal border-b border-black inline-block min-w-[150px]">{watch("date") ? format(new Date(watch("date")), 'dd/MM/yyyy') : ''}</span></div>
+              <div>Date : <span className="text-black font-normal border-b border-black inline-block min-w-[150px]">{watch("date") ? format(new Date(watch("date") as string), 'dd/MM/yyyy') : ''}</span></div>
             </div>
 
             {/* Guest Info Box */}
@@ -345,10 +345,10 @@ export default function BillingPage() {
               </div>
               <div className="flex justify-between pt-1">
                 <div className="flex w-1/2 pr-4">
-                  <span className="w-24">Check In</span>: <span className="text-black font-normal border-b border-black flex-1 ml-2">{watch("checkIn") ? format(new Date(watch("checkIn")), 'dd/MM/yyyy') : ''}</span>
+                  <span className="w-24">Check In</span>: <span className="text-black font-normal border-b border-black flex-1 ml-2">{watch("checkIn") ? format(new Date(watch("checkIn") as string), 'dd/MM/yyyy') : ''}</span>
                 </div>
                 <div className="flex w-1/2 pl-4">
-                  <span className="w-24">Check Out</span>: <span className="text-black font-normal border-b border-black flex-1 ml-2">{watch("checkOut") ? format(new Date(watch("checkOut")), 'dd/MM/yyyy') : ''}</span>
+                  <span className="w-24">Check Out</span>: <span className="text-black font-normal border-b border-black flex-1 ml-2">{watch("checkOut") ? format(new Date(watch("checkOut") as string), 'dd/MM/yyyy') : ''}</span>
                 </div>
               </div>
             </div>

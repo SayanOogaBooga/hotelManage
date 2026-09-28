@@ -5,8 +5,9 @@ export function ReceiptPrint({ booking }: { booking: any }) {
   if (!booking) return null;
 
   return (
-    <div className="hidden print:block w-full text-black font-sans bg-white overflow-hidden print:m-0 print:p-0">
-      <div className="border-2 border-green-800 p-1 relative h-[95vh] flex flex-col box-border">
+    <div className="fixed top-[200vh] left-0 w-[800px] bg-white -z-50 pointer-events-none">
+      <div id="receipt-print" className="w-full text-black font-sans bg-white overflow-hidden m-0 p-0">
+        <div className="border-2 border-green-800 p-1 relative min-h-[1100px] flex flex-col box-border mx-auto bg-white">
         <div className="border-2 border-green-800 p-4 flex-1 flex flex-col">
           {/* Header */}
           <div className="text-center relative mb-4">
@@ -259,6 +260,7 @@ export function ReceiptPrint({ booking }: { booking: any }) {
             Come as a Guest... Leave as a Friend...
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

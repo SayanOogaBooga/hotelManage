@@ -25,6 +25,39 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    
+    if (!id) {
+      return NextResponse.json({ error: "Booking ID is required" }, { status: 400 });
+    }
+
+    const data = await request.json();
+    await connectToDatabase();
+    
+    // Check if memoNo is unique (if they changed it)
+    if (data.memoNo) {
+      const existing = await Booking.findOne({ memoNo: data.memoNo, _id: { $ne: id } });
+      if (existing) {
+        return NextResponse.json({ error: "Memo No already exists. Please use a unique Memo No." }, { status: 400 });
+      }
+    }
+
+    const updatedBooking = await Booking.findByIdAndUpdate(id, data, { new: true });
+    
+    if (!updatedBooking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(updatedBooking, { status: 200 });
+  } catch (error: any) {
+    console.error("Booking update error:", error);
+    return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -33,7 +66,7 @@ export async function GET(request: Request) {
     await connectToDatabase();
 
     if (id) {
-      const booking = await Booking.findById(id);
+      const booking = await Booking.findById(id).populate("roomsBooked", "roomNumber category");
       if (!booking) {
         return NextResponse.json({ error: "Booking not found" }, { status: 404 });
       }
@@ -41,7 +74,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch all bookings sorted by newest first
-    const bookings = await Booking.find().sort({ createdAt: -1 });
+    const bookings = await Booking.find().populate("roomsBooked", "roomNumber category").sort({ createdAt: -1 });
     return NextResponse.json(bookings, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching bookings:", error);

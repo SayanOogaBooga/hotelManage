@@ -18,6 +18,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import toast from "react-hot-toast";
 import { ReceiptPrint } from "@/components/ReceiptPrint";
 import { playSuccessSound } from "@/lib/sounds";
+import { generatePdfFromElement } from "@/lib/generatePdf";
 
 // Define the Zod Validation Schema
 const particularSchema = z.object({
@@ -35,6 +36,7 @@ const billingSchema = z.object({
   mobileNo: z.string().min(10, "Valid mobile no is required"),
   checkIn: z.string().optional(),
   checkOut: z.string().optional(),
+  roomsBooked: z.array(z.string()).min(1, "Please assign at least one room"),
   particulars: z
     .array(particularSchema)
     .min(1, "At least one particular is required"),
@@ -49,6 +51,8 @@ export default function BillingPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
 
   const {
     register,
@@ -56,6 +60,7 @@ export default function BillingPage() {
     watch,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(billingSchema),
@@ -67,6 +72,7 @@ export default function BillingPage() {
       mobileNo: "",
       checkIn: "",
       checkOut: "",
+      roomsBooked: [],
       particulars: [
         { slNo: 1, description: "", noOfHead: 1, ratePerHeadDay: 0 },
       ],
@@ -101,23 +107,105 @@ export default function BillingPage() {
               checkOut: data.checkOut
                 ? new Date(data.checkOut).toISOString().split("T")[0]
                 : "",
+              roomsBooked: data.roomsBooked
+                ? data.roomsBooked.map((r: any) => r._id || r)
+                : [],
             });
             setIsSaved(true);
           }
         })
         .finally(() => setIsLoadingExisting(false));
+    } else {
+      // Fetch dynamic memo number for new bills
+      fetch("/api/memo")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.memoNo) {
+            const defaultCheckIn = params.get("checkIn") || "";
+            const defaultCheckOut = params.get("checkOut") || "";
+            reset((formValues) => ({
+              ...formValues,
+              memoNo: data.memoNo,
+              checkIn: defaultCheckIn,
+              checkOut: defaultCheckOut,
+            }));
+          }
+        });
     }
   }, [reset]);
+
+  const watchCheckIn = watch("checkIn");
+  const watchCheckOut = watch("checkOut");
+
+  // Dynamically fetch and calculate available rooms based on dates
+  useEffect(() => {
+    if (!watchCheckIn || !watchCheckOut) {
+      setAvailableRooms([]);
+      return;
+    }
+
+    Promise.all([fetch("/api/rooms"), fetch("/api/bookings")])
+      .then(async ([roomsRes, bookingsRes]) => {
+        const rooms = await roomsRes.json();
+        const bookings = await bookingsRes.json();
+
+        const getMidnightTime = (date: string | Date) => {
+          const d = new Date(date);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        };
+
+        const start = getMidnightTime(watchCheckIn);
+        const end = getMidnightTime(watchCheckOut);
+
+        if (start >= end) {
+          setAvailableRooms([]);
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const editId = params.get("id");
+
+        const bookedRoomIds = new Set();
+        bookings.forEach((b: any) => {
+          if (editId && b._id === editId) return; // Skip currently edited booking
+
+          if (b.checkIn && b.checkOut && b.roomsBooked) {
+            const bStart = getMidnightTime(b.checkIn);
+            const bEnd = getMidnightTime(b.checkOut);
+            if (start < bEnd && end > bStart) {
+              b.roomsBooked.forEach((r: any) => bookedRoomIds.add(r._id || r));
+            }
+          }
+        });
+
+        const freeRooms = rooms.filter((r: any) => !bookedRoomIds.has(r._id));
+        setAvailableRooms(freeRooms);
+      })
+      .catch((err) => console.error(err));
+  }, [watchCheckIn, watchCheckOut]);
 
   // Watch for dynamic calculation without forcing re-renders via setValue loop
   const watchParticulars = watch("particulars");
   const watchGst = watch("gst") || 0;
-  const watchCheckIn = watch("checkIn");
 
   // Calculate dynamically during render
+  let daysBooked = 1;
+  if (watchCheckIn && watchCheckOut) {
+    const start = new Date(watchCheckIn).getTime();
+    const end = new Date(watchCheckOut).getTime();
+    if (end > start) {
+      daysBooked = Math.max(
+        1,
+        Math.ceil((end - start) / (1000 * 60 * 60 * 24)),
+      );
+    }
+  }
+
   const calculatedParticulars = fields.map((field, index) => {
     const current = watchParticulars?.[index] || field;
-    const amount = (current.noOfHead || 0) * (current.ratePerHeadDay || 0);
+    const amount =
+      (current.noOfHead || 0) * (current.ratePerHeadDay || 0) * daysBooked;
     return { ...current, amount };
   });
 
@@ -134,7 +222,7 @@ export default function BillingPage() {
       // Map the dynamically calculated amounts back into the payload before sending
       const payloadParticulars = data.particulars.map((p) => ({
         ...p,
-        amount: p.noOfHead * p.ratePerHeadDay,
+        amount: (p.noOfHead || 0) * (p.ratePerHeadDay || 0) * daysBooked,
       }));
 
       const payload = {
@@ -148,8 +236,14 @@ export default function BillingPage() {
         checkOut: data.checkOut ? new Date(data.checkOut) : null,
       };
 
-      const res = await fetch("/api/bookings", {
-        method: "POST",
+      const params = new URLSearchParams(window.location.search);
+      const editId = params.get("id");
+
+      const url = editId ? `/api/bookings?id=${editId}` : "/api/bookings";
+      const method = editId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -157,7 +251,9 @@ export default function BillingPage() {
       if (res.ok) {
         setIsSaved(true);
         playSuccessSound();
-        toast.success("Bill saved successfully!");
+        toast.success(
+          editId ? "Bill updated successfully!" : "Bill saved successfully!",
+        );
         setShowPrintModal(true);
       } else {
         const err = await res.json();
@@ -170,8 +266,18 @@ export default function BillingPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsGeneratingPdf(true);
+    const success = await generatePdfFromElement(
+      "receipt-print",
+      `Bill-${watch("memoNo") || "Receipt"}.pdf`,
+    );
+    setIsGeneratingPdf(false);
+    if (success) {
+      toast.success("PDF Downloaded!");
+    } else {
+      toast.error("Failed to generate PDF");
+    }
   };
 
   return (
@@ -181,7 +287,7 @@ export default function BillingPage() {
         <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
-              Generate Bill / Receipt
+              Create Memo / Receipt
             </h1>
             <p className="text-sm md:text-base text-slate-500 mt-1">
               Fill the details to auto-calculate amounts and generate a
@@ -197,8 +303,9 @@ export default function BillingPage() {
                 Memo No.
               </label>
               <input
+                readOnly
                 {...register("memoNo")}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 ${errors.memoNo ? "border-red-500 bg-red-50" : "border-slate-200"}`}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 bg-slate-50 cursor-not-allowed ${errors.memoNo ? "border-red-500 bg-red-50" : "border-slate-200"}`}
               />
               {errors.memoNo && (
                 <p className="text-red-500 text-xs mt-1">
@@ -225,7 +332,7 @@ export default function BillingPage() {
               )}
             </div>
 
-            <div className="space-y-1 col-span-2">
+            <div className="space-y-1">
               <label className="text-sm font-semibold text-slate-700">
                 Guest Name
               </label>
@@ -236,6 +343,29 @@ export default function BillingPage() {
               {errors.guestName && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.guestName.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">
+                Mobile No.
+              </label>
+              <input
+                {...register("mobileNo", {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  },
+                })}
+                type="text"
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="10-digit mobile number"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 ${errors.mobileNo ? "border-red-500 bg-red-50" : "border-slate-200"}`}
+              />
+              {errors.mobileNo && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.mobileNo.message}
                 </p>
               )}
             </div>
@@ -252,17 +382,107 @@ export default function BillingPage() {
 
             <div className="space-y-1">
               <label className="text-sm font-semibold text-slate-700">
-                Mobile No.
+                Check In
               </label>
-              <input
-                {...register("mobileNo")}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 ${errors.mobileNo ? "border-red-500 bg-red-50" : "border-slate-200"}`}
+              <Controller
+                control={control}
+                name="checkIn"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={(date) => field.onChange(date)}
+                    minDate={new Date()}
+                  />
+                )}
               />
-              {errors.mobileNo && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.mobileNo.message}
-                </p>
-              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">
+                Check Out
+              </label>
+              <Controller
+                control={control}
+                name="checkOut"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={(date) => field.onChange(date)}
+                    minDate={watchCheckIn ? new Date(watchCheckIn) : new Date()}
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-1 col-span-2">
+              <label className="text-sm font-semibold text-slate-700 flex items-center justify-between">
+                <span>
+                  Assign Rooms <span className="text-rose-500">*</span>
+                </span>
+                {errors.roomsBooked && (
+                  <span className="text-xs font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md animate-pulse">
+                    {errors.roomsBooked.message}
+                  </span>
+                )}
+              </label>
+              <div className="flex flex-wrap gap-3 mt-2">
+                {availableRooms.map((room) => {
+                  const isSelected = watch("roomsBooked")?.includes(room._id);
+                  return (
+                    <button
+                      key={room._id}
+                      type="button"
+                      onClick={() => {
+                        const current = watch("roomsBooked") || [];
+                        if (isSelected) {
+                          setValue(
+                            "roomsBooked",
+                            current.filter((id: string) => id !== room._id),
+                            { shouldValidate: true, shouldDirty: true },
+                          );
+                        } else {
+                          setValue("roomsBooked", [...current, room._id], {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                        }
+                      }}
+                      className={`relative group flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer overflow-hidden ${
+                        isSelected
+                          ? "bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-200/50 scale-[1.02] -translate-y-0.5"
+                          : "bg-white text-slate-600 border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-md hover:-translate-y-0.5"
+                      }`}
+                    >
+                      {/* Smooth background hover effect for unselected */}
+                      {!isSelected && (
+                        <div className="absolute inset-0 bg-emerald-100/50 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                      )}
+
+                      <span className="relative z-10 flex items-center gap-2">
+                        {isSelected && (
+                          <CheckCircle2
+                            size={16}
+                            className="text-white animate-in zoom-in spin-in-12 duration-300"
+                          />
+                        )}
+                        <span className="text-base">{room.roomNumber}</span>
+                        {/* <span className={`font-medium text-xs px-2 py-0.5 rounded-md ${isSelected ? 'bg-black/20 text-emerald-50' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-emerald-600'}`}>
+                          {room.category}
+                        </span> */}
+                      </span>
+                    </button>
+                  );
+                })}
+                {availableRooms.length === 0 && (
+                  <div className="w-full p-4 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-col items-center justify-center text-center">
+                    <p className="text-sm font-semibold text-slate-500">
+                      {!watchCheckIn || !watchCheckOut
+                        ? "Select Check-in and Check-out dates to reveal available rooms."
+                        : "No rooms available for the selected dates."}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -279,47 +499,19 @@ export default function BillingPage() {
                 <option value="Others">Others</option>
               </select>
             </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700">
-                Check In
-              </label>
-              <Controller
-                control={control}
-                name="checkIn"
-                render={({ field }) => (
-                  <DatePicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Check-in date"
-                  />
-                )}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700">
-                Check Out
-              </label>
-              <Controller
-                control={control}
-                name="checkOut"
-                render={({ field }) => (
-                  <DatePicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Check-out date"
-                    minDate={watchCheckIn}
-                  />
-                )}
-              />
-            </div>
           </div>
 
           <div className="border-t border-slate-200 pt-8">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">
-              Particulars
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <h3 className="text-lg font-bold text-slate-800">Particulars</h3>
+              <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-blue-100">
+                <span className="bg-blue-200 text-blue-800 w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
+                  i
+                </span>
+                Formula: (No. of Heads × Rate) × {daysBooked}{" "}
+                {daysBooked === 1 ? "Day" : "Days"} Booked
+              </div>
+            </div>
 
             <div className="space-y-4">
               {fields.map((field, index) => {
@@ -356,13 +548,17 @@ export default function BillingPage() {
                     <div className="grid grid-cols-2 gap-4 md:col-span-4">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-500">
-                          No. of Head/Days
+                          No. of Head
                         </label>
                         <input
                           type="number"
                           {...register(`particulars.${index}.noOfHead`, {
                             valueAsNumber: true,
                           })}
+                          onWheel={(e) => (e.target as HTMLElement).blur()}
+                          onKeyDown={(e) => {
+                            if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+                          }}
                           className={`w-full px-3 py-2 border rounded-lg bg-white ${particularError?.noOfHead ? "border-red-500" : ""}`}
                         />
                       </div>
@@ -375,17 +571,29 @@ export default function BillingPage() {
                           {...register(`particulars.${index}.ratePerHeadDay`, {
                             valueAsNumber: true,
                           })}
+                          onWheel={(e) => (e.target as HTMLElement).blur()}
+                          onKeyDown={(e) => {
+                            if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+                          }}
                           className={`w-full px-3 py-2 border rounded-lg bg-white ${particularError?.ratePerHeadDay ? "border-red-500" : ""}`}
                         />
                       </div>
                     </div>
-                    <div className="md:col-span-2 space-y-1">
+                    <div className="md:col-span-2 space-y-1 relative">
                       <label className="text-xs font-semibold text-slate-500">
                         Amount (₹)
                       </label>
                       <div className="w-full px-3 py-2 border border-emerald-200 bg-emerald-50 text-emerald-800 font-bold rounded-lg flex items-center h-[42px]">
                         {dynamicAmount.toFixed(2)}
                       </div>
+                      <p
+                        className="absolute -bottom-5 left-0 w-full text-[10px] text-slate-400 font-medium truncate"
+                        title={`${watchParticulars?.[index]?.noOfHead || 0} heads × ₹${watchParticulars?.[index]?.ratePerHeadDay || 0} × ${daysBooked} days`}
+                      >
+                        ({watchParticulars?.[index]?.noOfHead || 0} × ₹
+                        {watchParticulars?.[index]?.ratePerHeadDay || 0} ×{" "}
+                        {daysBooked}d)
+                      </p>
                     </div>
 
                     {fields.length > 1 && (
@@ -462,19 +670,23 @@ export default function BillingPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="pt-6 border-t border-slate-200 flex justify-end">
             <button
               onClick={
                 isSaved ? () => setShowPrintModal(true) : handleSubmit(onSubmit)
               }
-              disabled={isSaving || isLoadingExisting}
+              disabled={isSaving || isLoadingExisting || isGeneratingPdf}
               className="w-full sm:w-auto bg-primary text-white px-10 py-4 rounded-xl font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 hover:shadow-md text-xl shadow-sm"
             >
-              {isSaving || isLoadingExisting ? (
+              {isSaving || isLoadingExisting || isGeneratingPdf ? (
                 <>
                   <RefreshCw size={24} className="animate-spin" />{" "}
-                  {isLoadingExisting ? "Loading..." : "Saving..."}
+                  {isGeneratingPdf
+                    ? "Generating PDF..."
+                    : isLoadingExisting
+                      ? "Loading..."
+                      : "Saving..."}
                 </>
               ) : isSaved ? (
                 <>
@@ -517,13 +729,13 @@ export default function BillingPage() {
 
             <div className="flex flex-col gap-3 w-full">
               <button
-                onClick={() => {
+                onClick={async () => {
                   setShowPrintModal(false);
-                  setTimeout(() => window.print(), 100);
+                  await handlePrint();
                 }}
                 className="w-full py-3 px-4 rounded-xl bg-primary text-white font-bold hover:bg-green-700 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-sm flex items-center justify-center gap-2"
               >
-                <Printer size={20} /> Print Bill Now
+                <Printer size={20} /> Download PDF Receipt
               </button>
               <button
                 onClick={() => setShowPrintModal(false)}

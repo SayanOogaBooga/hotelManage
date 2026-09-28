@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import Link from "next/link";
 import {
   History,
   ReceiptText,
@@ -11,10 +12,13 @@ import {
   User as UserIcon,
   Printer,
   Trash2,
+  BedDouble,
+  Edit,
 } from "lucide-react";
 import { ReceiptPrint } from "@/components/ReceiptPrint";
 import toast from "react-hot-toast";
 import { playDeleteSound } from "@/lib/sounds";
+import { generatePdfFromElement } from "@/lib/generatePdf";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BookingsPage() {
@@ -25,8 +29,14 @@ export default function BookingsPage() {
 
   const handlePrint = (booking: any) => {
     setPrintBooking(booking);
-    setTimeout(() => {
-      window.print();
+    const toastId = toast.loading("Generating PDF...");
+    setTimeout(async () => {
+      const success = await generatePdfFromElement("receipt-print", `Bill-${booking.memoNo || "Receipt"}.pdf`);
+      if (success) {
+        toast.success("PDF Downloaded!", { id: toastId });
+      } else {
+        toast.error("Failed to generate PDF", { id: toastId });
+      }
     }, 100);
   };
 
@@ -132,7 +142,7 @@ export default function BookingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6 flex-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 flex-1">
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                       <UserIcon size={12} /> Contact
@@ -149,8 +159,24 @@ export default function BookingsPage() {
                       {booking.paymentMode}
                     </p>
                   </div>
+                  <div className="space-y-1 sm:col-span-1 col-span-2">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <BedDouble size={12} /> Rooms
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {booking.roomsBooked && booking.roomsBooked.length > 0 ? (
+                        booking.roomsBooked.map((room: any) => (
+                           <span key={room._id || room} className="text-[11px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded">
+                             {room.roomNumber || "..."}
+                           </span>
+                        ))
+                      ) : (
+                        <span className="text-sm font-semibold text-slate-400">N/A</span>
+                      )}
+                    </div>
+                  </div>
                   {booking.checkIn && (
-                    <div className="space-y-1 col-span-2 bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center mt-2">
+                    <div className="space-y-1 col-span-full bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center mt-2">
                       <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                           Check In
@@ -189,12 +215,20 @@ export default function BookingsPage() {
                       <Trash2 size={14} /> Delete
                     </button>
                   </div>
-                  <button
-                    onClick={() => handlePrint(booking)}
-                    className="text-sm font-semibold text-primary hover:text-green-700 transition-all flex items-center gap-1 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    Print Receipt <Printer size={14} />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/dashboard/billing?id=${booking._id}`}
+                      className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all flex items-center gap-1 hover:-translate-y-0.5 active:translate-y-0"
+                    >
+                      <Edit size={14} /> Edit
+                    </Link>
+                    <button
+                      onClick={() => handlePrint(booking)}
+                      className="text-sm font-semibold text-primary hover:text-green-700 transition-all flex items-center gap-1 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                    >
+                      Download PDF <Printer size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

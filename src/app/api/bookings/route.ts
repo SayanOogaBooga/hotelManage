@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Booking from "@/models/Booking";
+import "@/models/Room"; // Import for side-effects to register schema
 
 export const dynamic = "force-dynamic";
 

@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 import { Toaster } from "react-hot-toast";
+import { FetchInterceptor } from "@/components/FetchInterceptor";
 
 export const metadata: Metadata = {
   title: "Heaven Valley Retreat - Management",
@@ -33,6 +34,7 @@ export default function RootLayout({
         {children}
         <div className="print:hidden">
           <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+          <FetchInterceptor />
         </div>
         <script
           dangerouslySetInnerHTML={{

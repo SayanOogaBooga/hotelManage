@@ -28,16 +28,26 @@ export default function BookingsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handlePrint = (booking: any) => {
-    setPrintBooking(booking);
-    const toastId = toast.loading("Generating PDF...");
-    setTimeout(async () => {
-      const success = await generatePdfFromElement("receipt-print", `Bill-${booking.memoNo || "Receipt"}.pdf`);
-      if (success) {
-        toast.success("PDF Downloaded!", { id: toastId });
-      } else {
-        toast.error("Failed to generate PDF", { id: toastId });
-      }
-    }, 100);
+    // Clear it first to force re-render if it's the same booking
+    setPrintBooking(null);
+    
+    setTimeout(() => {
+      setPrintBooking(booking);
+      const toastId = toast.loading("Generating PDF...");
+      
+      // Give React enough time to render the DOM before html2canvas runs
+      setTimeout(async () => {
+        const success = await generatePdfFromElement("receipt-print", `Bill-${booking.memoNo || "Receipt"}.pdf`);
+        if (success) {
+          toast.success("PDF Downloaded!", { id: toastId });
+        } else {
+          toast.error("Failed to generate PDF", { id: toastId });
+        }
+        
+        // Cleanup DOM after generation
+        setTimeout(() => setPrintBooking(null), 500);
+      }, 500);
+    }, 0);
   };
 
   const handleDelete = async () => {

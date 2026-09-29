@@ -14,31 +14,47 @@ export function ReceiptPrint({ booking }: { booking: any }) {
           <div className="border-2 border-green-800 p-4 flex-1 flex flex-col">
             {/* Header */}
             <div className="text-center relative mb-4">
-              <h1
-                className="text-5xl font-bold text-blue-900 uppercase font-serif tracking-tighter"
-                style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.2)" }}
-              >
-                Heaven Valley
-              </h1>
-              <h2 className="text-3xl font-bold text-green-800 uppercase tracking-widest mt-1">
-                Retreat
-              </h2>
-              <p className="text-lg font-semibold text-slate-800">
-                (Kanchanjungha View)
-              </p>
-              <p className="italic text-green-700 font-medium mt-1">
-                Feel the Nature ... Feel at Home ...
-              </p>
+              {/* Top Left Fading Background Image */}
+              <div
+                className="absolute -top-4 -left-4 w-72 h-64 pointer-events-none mix-blend-multiply"
+                style={{
+                  backgroundImage: "url('/hotel-bg.jpg')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse at top left, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 70%)",
+                  maskImage:
+                    "radial-gradient(ellipse at top left, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 70%)",
+                }}
+              />
 
-              <div className="absolute top-0 right-0 text-right text-sm">
-                <p className="font-bold">📍 Shilarigaon</p>
-                <p>Kalimpong District</p>
-                <p>West Bengal</p>
-                <div className="mt-2 font-bold text-blue-900 leading-tight">
-                  <p>📞 7980883751</p>
-                  <p>7044083325</p>
-                  <p>7439289465</p>
-                  <p>9836472445</p>
+              <div className="relative z-10">
+                <h1
+                  className="text-5xl font-bold text-blue-900 uppercase font-serif tracking-tighter"
+                  style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.2)" }}
+                >
+                  Heaven Valley
+                </h1>
+                <h2 className="text-3xl font-bold text-green-800 uppercase tracking-widest mt-1">
+                  Retreat
+                </h2>
+                <p className="text-lg font-semibold text-slate-800">
+                  (Kanchanjungha View)
+                </p>
+                <p className="italic text-green-700 font-medium mt-1">
+                  Feel the Nature ... Feel at Home ...
+                </p>
+
+                <div className="absolute top-0 right-0 text-right text-sm">
+                  <p className="font-bold">📍 Shilarigaon</p>
+                  <p>Kalimpong District</p>
+                  <p>West Bengal</p>
+                  <div className="mt-2 font-bold text-blue-900 leading-tight">
+                    <p>📞 7980883751</p>
+                    <p>7044083325</p>
+                    <p>7439289465</p>
+                    <p>9836472445</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -60,7 +76,7 @@ export function ReceiptPrint({ booking }: { booking: any }) {
             {/* Meta Info */}
             <div className="flex justify-between font-bold text-blue-900 text-sm mb-4">
               <div>
-                Memo No. :{" "}
+                Bill No. :{" "}
                 <span className="text-black font-normal border-b border-black inline-block min-w-[150px]">
                   {booking.memoNo}
                 </span>
@@ -188,30 +204,44 @@ export function ReceiptPrint({ booking }: { booking: any }) {
                 <tr className="border-t border-green-800">
                   <td
                     colSpan={3}
-                    rowSpan={3}
+                    rowSpan={4}
                     className="border border-green-800"
                   ></td>
-                  <td className="border border-green-800 text-right px-2 font-bold text-blue-900 bg-green-50">
+                  <td className="border border-green-800 text-right px-2 font-bold text-blue-900 bg-green-50 text-xs whitespace-nowrap">
                     Sub Total
                   </td>
                   <td className="border border-green-800 text-center font-bold">
                     {booking.subTotal ? booking.subTotal.toFixed(2) : ""}
                   </td>
                 </tr>
-                <tr>
-                  <td className="border border-green-800 text-right px-2 font-bold text-blue-900 bg-green-50">
-                    GST (if any)
-                  </td>
-                  <td className="border border-green-800 text-center font-bold">
-                    {booking.gst ? booking.gst.toFixed(2) : ""}
-                  </td>
-                </tr>
                 <tr className="bg-green-800 text-white font-bold">
-                  <td className="border border-green-800 text-right px-2 py-1">
+                  <td className="border border-green-800 text-right px-2 py-1 text-xs whitespace-nowrap">
                     Total Amount
                   </td>
                   <td className="border border-green-800 text-center">
                     {booking.totalAmount ? booking.totalAmount.toFixed(2) : ""}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-green-800 text-right px-2 font-bold text-blue-900 bg-green-50 text-xs whitespace-nowrap">
+                    Advance Payment
+                  </td>
+                  <td className="border border-green-800 text-center font-bold">
+                    {booking.advancePayment !== undefined
+                      ? booking.advancePayment.toFixed(2)
+                      : "0.00"}
+                  </td>
+                </tr>
+                <tr className="bg-red-50 text-red-800 font-bold">
+                  <td className="border border-green-800 text-right px-2 py-1 text-xs whitespace-nowrap">
+                    Remaining Balance
+                  </td>
+                  <td className="border border-green-800 text-center">
+                    {booking.remainingAmount !== undefined
+                      ? booking.remainingAmount.toFixed(2)
+                      : booking.totalAmount
+                        ? booking.totalAmount.toFixed(2)
+                        : "0.00"}
                   </td>
                 </tr>
               </tbody>

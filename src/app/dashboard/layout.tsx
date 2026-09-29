@@ -11,7 +11,8 @@ import {
   Leaf,
   History,
   Menu,
-  X
+  X,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +22,7 @@ const navItems = [
   { name: "Rooms", href: "/dashboard/rooms", icon: BedDouble },
   { name: "Create Memo", href: "/dashboard/billing", icon: FileText },
   { name: "Bookings", href: "/dashboard/bookings", icon: History },
+  { name: "Register", href: "/dashboard/register", icon: BookOpen },
 ];
 
 function SidebarContent({ 

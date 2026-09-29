@@ -54,19 +54,25 @@ export default function DashboardOverview() {
       const rooms = await roomsRes.json();
       const bookings = await bookingsRes.json();
       
-      const start = searchStart.getTime();
-      const end = searchEnd.getTime();
+      const getMidnightTime = (date: string | Date) => {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      };
+
+      const start = getMidnightTime(searchStart);
+      const end = getMidnightTime(searchEnd);
 
       const bookedRoomIds = new Set();
       
       bookings.forEach((b: any) => {
         if (b.checkIn && b.checkOut && b.roomsBooked && b.roomsBooked.length > 0) {
-          const bStart = new Date(b.checkIn).getTime();
-          const bEnd = new Date(b.checkOut).getTime();
+          const bStart = getMidnightTime(b.checkIn);
+          const bEnd = getMidnightTime(b.checkOut);
           
           // Check for overlap
           if (start < bEnd && end > bStart) {
-            b.roomsBooked.forEach((roomId: string) => bookedRoomIds.add(roomId));
+            b.roomsBooked.forEach((r: any) => bookedRoomIds.add(r._id || r));
           }
         }
       });

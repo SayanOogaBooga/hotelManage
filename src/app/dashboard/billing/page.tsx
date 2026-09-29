@@ -40,7 +40,7 @@ const billingSchema = z.object({
   particulars: z
     .array(particularSchema)
     .min(1, "At least one particular is required"),
-  gst: z.number().min(0).optional(),
+  advancePayment: z.number().min(0).optional(),
   paymentMode: z.enum(["Cash", "UPI", "Bank Transfer", "Others"]),
 });
 
@@ -76,7 +76,7 @@ export default function BillingPage() {
       particulars: [
         { slNo: 1, description: "", noOfHead: 1, ratePerHeadDay: 0 },
       ],
-      gst: 0,
+      advancePayment: 0,
       paymentMode: "Cash",
     },
     mode: "onChange",
@@ -98,6 +98,7 @@ export default function BillingPage() {
           if (!data.error) {
             reset({
               ...data,
+              advancePayment: data.advancePayment || 0,
               date: data.date
                 ? new Date(data.date).toISOString().split("T")[0]
                 : "",
@@ -111,7 +112,8 @@ export default function BillingPage() {
                 ? data.roomsBooked.map((r: any) => r._id || r)
                 : [],
             });
-            setIsSaved(true);
+            // Intentionally not setting isSaved to true here, 
+            // so the user can actually save their edits!
           }
         })
         .finally(() => setIsLoadingExisting(false));
@@ -187,7 +189,7 @@ export default function BillingPage() {
 
   // Watch for dynamic calculation without forcing re-renders via setValue loop
   const watchParticulars = watch("particulars");
-  const watchGst = watch("gst") || 0;
+  const watchAdvancePayment = watch("advancePayment") || 0;
 
   // Calculate dynamically during render
   let daysBooked = 1;
@@ -213,7 +215,8 @@ export default function BillingPage() {
     (sum, item) => sum + item.amount,
     0,
   );
-  const totalAmount = subTotal + watchGst;
+  const totalAmount = subTotal;
+  const remainingAmount = Math.max(0, totalAmount - watchAdvancePayment);
   const amountInWords = numberToWords(totalAmount);
 
   const onSubmit = async (data: FormValues) => {
@@ -230,6 +233,8 @@ export default function BillingPage() {
         particulars: payloadParticulars,
         subTotal,
         totalAmount,
+        advancePayment: watchAdvancePayment,
+        remainingAmount,
         amountInWords,
         date: new Date(data.date),
         checkIn: data.checkIn ? new Date(data.checkIn) : null,
@@ -650,22 +655,32 @@ export default function BillingPage() {
                   ₹ {subTotal.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between items-center px-4 py-2 bg-slate-50 rounded-lg">
-                <span className="font-medium text-slate-600">
-                  GST (if any) ₹
-                </span>
-                <input
-                  type="number"
-                  {...register("gst", { valueAsNumber: true })}
-                  className="w-32 px-3 py-1 border rounded-lg text-right focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
               <div className="flex justify-between items-center px-4 py-3 bg-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
                 <span className="font-bold text-emerald-800 text-lg">
                   Total Amount
                 </span>
                 <span className="font-bold text-emerald-800 text-xl">
                   ₹ {totalAmount.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center px-4 py-2 bg-slate-50 rounded-lg mb-2 mt-4">
+                <span className="font-medium text-slate-600">
+                  Advance Payment (if any) ₹
+                </span>
+                <input
+                  type="number"
+                  {...register("advancePayment", { valueAsNumber: true })}
+                  className="w-32 px-3 py-1 border rounded-lg text-right focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              <div className="flex justify-between items-center px-4 py-3 bg-rose-50 rounded-xl border border-rose-200 shadow-sm">
+                <span className="font-bold text-rose-800 text-lg">
+                  Remaining Balance
+                </span>
+                <span className="font-bold text-rose-800 text-xl">
+                  ₹ {remainingAmount.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -709,6 +724,8 @@ export default function BillingPage() {
           particulars: calculatedParticulars,
           subTotal,
           totalAmount,
+          advancePayment: watchAdvancePayment,
+          remainingAmount,
           amountInWords,
         }}
       />

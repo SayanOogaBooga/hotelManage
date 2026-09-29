@@ -22,6 +22,8 @@ export interface IBooking extends Document {
   gst: number;
   totalAmount: number;
   amountInWords: string;
+  advancePayment: number;
+  remainingAmount: number;
   paymentMode: "Cash" | "UPI" | "Bank Transfer" | "Others";
 }
 
@@ -47,6 +49,8 @@ const BookingSchema = new Schema<IBooking>({
   gst: { type: Number, required: true, default: 0 },
   totalAmount: { type: Number, required: true },
   amountInWords: { type: String, required: true },
+  advancePayment: { type: Number, required: false, default: 0 },
+  remainingAmount: { type: Number, required: false, default: 0 },
   paymentMode: { 
     type: String, 
     enum: ["Cash", "UPI", "Bank Transfer", "Others"], 
@@ -54,4 +58,7 @@ const BookingSchema = new Schema<IBooking>({
   },
 }, { timestamps: true });
 
-export default mongoose.models.Booking || mongoose.model<IBooking>("Booking", BookingSchema);
+if (mongoose.models.Booking) {
+  delete mongoose.models.Booking;
+}
+export default mongoose.model<IBooking>("Booking", BookingSchema);

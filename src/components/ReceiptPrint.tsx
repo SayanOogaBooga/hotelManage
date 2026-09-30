@@ -35,9 +35,6 @@ export function ReceiptPrint({ booking }: { booking: any }) {
                 >
                   Heaven Valley
                 </h1>
-                <h2 className="text-3xl font-bold text-green-800 uppercase tracking-widest mt-1">
-                  Retreat
-                </h2>
                 <p className="text-lg font-semibold text-slate-800">
                   (Kanchanjungha View)
                 </p>
@@ -46,14 +43,12 @@ export function ReceiptPrint({ booking }: { booking: any }) {
                 </p>
 
                 <div className="absolute top-0 right-0 text-right text-sm">
-                  <p className="font-bold">📍 Shilarigaon</p>
-                  <p>Kalimpong District</p>
+                  <p className="font-bold">📍 Sillary Gaon,</p>
+                  <p className="font-bold">Kalimpong - 734314</p>
                   <p>West Bengal</p>
                   <div className="mt-2 font-bold text-blue-900 leading-tight">
-                    <p>📞 7980883751</p>
-                    <p>7044083325</p>
-                    <p>7439289465</p>
-                    <p>9836472445</p>
+                    <p>📞 7980883751, 7044083325</p>
+                    <p>7439289465, 9836472445</p>
                   </div>
                 </div>
               </div>

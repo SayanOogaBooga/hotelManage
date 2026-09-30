@@ -397,6 +397,7 @@ export default function BillingPage() {
                     value={field.value}
                     onChange={(date) => field.onChange(date)}
                     minDate={new Date()}
+                    highlightAvailability
                   />
                 )}
               />
@@ -414,6 +415,7 @@ export default function BillingPage() {
                     value={field.value}
                     onChange={(date) => field.onChange(date)}
                     minDate={watchCheckIn ? new Date(watchCheckIn) : new Date()}
+                    highlightAvailability
                   />
                 )}
               />

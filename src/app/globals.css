@@ -14,7 +14,7 @@
   --secondary-foreground: #1e293b; /* Slate 800 */
   --accent: #22c55e; /* Green 500 */
   --accent-foreground: #ffffff;
-  
+
   /* shadcn base values */
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -39,7 +39,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -60,7 +60,7 @@
   * {
     @apply border-border outline-ring/50;
   }
-  
+
   /* Remove arrows/spinners from number inputs */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
@@ -78,6 +78,10 @@
   }
   html {
     @apply font-sans;
+  }
+
+  button {
+    cursor: pointer;
   }
 }
 

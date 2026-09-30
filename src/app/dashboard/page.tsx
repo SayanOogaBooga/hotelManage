@@ -305,11 +305,11 @@ export default function DashboardOverview() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700">Check In Date</label>
-            <DatePicker value={searchStart ? searchStart.toISOString().split("T")[0] : ""} onChange={(d) => setSearchStart(new Date(d))} minDate={new Date()} />
+            <DatePicker value={searchStart ? searchStart.toISOString().split("T")[0] : ""} onChange={(d) => setSearchStart(new Date(d))} minDate={new Date()} highlightAvailability />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700">Check Out Date</label>
-            <DatePicker value={searchEnd ? searchEnd.toISOString().split("T")[0] : ""} onChange={(d) => setSearchEnd(new Date(d))} minDate={searchStart || new Date()} />
+            <DatePicker value={searchEnd ? searchEnd.toISOString().split("T")[0] : ""} onChange={(d) => setSearchEnd(new Date(d))} minDate={searchStart || new Date()} highlightAvailability />
           </div>
           <button
             onClick={handleSearchAvailability}

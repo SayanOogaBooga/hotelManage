@@ -1,4 +1,4 @@
-import { toPng } from 'html-to-image';
+import { toJpeg } from 'html-to-image';
 import jsPDF from "jspdf";
 
 export const generatePdfFromElement = async (
@@ -13,8 +13,10 @@ export const generatePdfFromElement = async (
     }
 
     // Capture the element using html-to-image (supports modern CSS colors like lab/oklch via SVG foreignObject)
-    const imgData = await toPng(element, {
+    // Using JPEG with quality optimization drastically reduces the PDF file size (from ~10MB down to <2MB)
+    const imgData = await toJpeg(element, {
       pixelRatio: 2, // 2x scale for better quality on retina displays
+      quality: 0.8,  // 80% quality compression for smaller file size
       backgroundColor: "#ffffff",
     });
 
@@ -23,6 +25,7 @@ export const generatePdfFromElement = async (
       orientation: "portrait",
       unit: "mm",
       format: "a4",
+      compress: true, // Enable jsPDF internal compression
     });
 
     // Calculate dimensions to fit the A4 page perfectly
@@ -32,7 +35,7 @@ export const generatePdfFromElement = async (
     const pdfHeight = (rect.height * pdfWidth) / rect.width;
 
     // Add the image to the PDF
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
     
     // Trigger download
     pdf.save(filename);

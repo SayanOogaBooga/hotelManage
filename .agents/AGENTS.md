@@ -1,4 +1,4 @@
-
 ## Date Picker Rules
-- Check-In dates must always be restricted to 	oday or later (no past dates).
+- Check-In dates must always be restricted to today or later (no past dates).
 - Check-Out dates must always be restricted to the selected Check-In date or later (cannot be before Check-In).
+- Beware of the midnight time bug: When comparing or setting dates, ensure you account for timezone offsets causing dates to shift to the previous or next day at midnight. Use precise date logic or strip times when comparing local dates.

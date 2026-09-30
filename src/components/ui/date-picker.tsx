@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Loader2 } from "lucide-react";
 
 interface DatePickerProps {
   value?: Date | string;
@@ -21,6 +22,7 @@ interface DatePickerProps {
   dateFormat?: string;
   displayFormat?: string;
   minDate?: Date | string;
+  highlightAvailability?: boolean;
 }
 
 export function DatePicker({
@@ -32,8 +34,74 @@ export function DatePicker({
   dateFormat = "yyyy-MM-dd",
   displayFormat = "dd MMM yyyy",
   minDate,
+  highlightAvailability = false,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const [loadingAvailability, setLoadingAvailability] = React.useState(false);
+  const [fullyBookedDates, setFullyBookedDates] = React.useState<Date[]>([]);
+  const [availableDates, setAvailableDates] = React.useState<Date[]>([]);
+
+  React.useEffect(() => {
+    if (open && highlightAvailability) {
+      setLoadingAvailability(true);
+      Promise.all([
+        fetch("/api/rooms").then(r => r.json()),
+        fetch("/api/bookings").then(r => r.json())
+      ]).then(([rooms, bookings]) => {
+        const totalRooms = rooms.length;
+        if (totalRooms === 0) return;
+
+        const bookedPerDay = new Map<number, Set<string>>();
+        
+        const getMidnightTime = (date: string | Date) => {
+          const d = new Date(date);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        };
+
+        bookings.forEach((b: any) => {
+          if (b.checkIn && b.checkOut && b.roomsBooked) {
+            const bStart = getMidnightTime(b.checkIn);
+            const bEnd = getMidnightTime(b.checkOut);
+            
+            for (let t = bStart; t < bEnd; t += 86400000) {
+              const tMidnight = getMidnightTime(new Date(t));
+              if (!bookedPerDay.has(tMidnight)) {
+                bookedPerDay.set(tMidnight, new Set());
+              }
+              const daySet = bookedPerDay.get(tMidnight)!;
+              b.roomsBooked.forEach((r: any) => daySet.add(r._id || r));
+            }
+          }
+        });
+
+        const todayMs = getMidnightTime(new Date());
+        const maxMs = todayMs + (90 * 86400000);
+        
+        const fullyBooked = [];
+        const available = [];
+        
+        for (let t = todayMs; t < maxMs; t += 86400000) {
+           const tMidnight = getMidnightTime(new Date(t));
+           const set = bookedPerDay.get(tMidnight);
+           const bookedCount = set ? set.size : 0;
+           
+           if (bookedCount >= totalRooms) {
+             fullyBooked.push(new Date(tMidnight));
+           } else {
+             available.push(new Date(tMidnight));
+           }
+        }
+        
+        setFullyBookedDates(fullyBooked);
+        setAvailableDates(available);
+      }).catch(err => {
+        console.error("Failed to load availability", err);
+      }).finally(() => {
+        setLoadingAvailability(false);
+      });
+    }
+  }, [open, highlightAvailability]);
 
   const parsedMinDate = React.useMemo(() => {
     if (!minDate) return undefined;
@@ -89,7 +157,11 @@ export function DatePicker({
         <span>
           {dateObj ? format(dateObj, displayFormat) : placeholder}
         </span>
-        <CalendarIcon className="h-4 w-4 text-slate-500 shrink-0 ml-2" />
+        {loadingAvailability ? (
+          <Loader2 className="h-4 w-4 text-slate-500 shrink-0 ml-2 animate-spin" />
+        ) : (
+          <CalendarIcon className="h-4 w-4 text-slate-500 shrink-0 ml-2" />
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 bg-white border border-slate-200 shadow-xl rounded-xl" align="start">
         <Calendar
@@ -97,6 +169,8 @@ export function DatePicker({
           selected={dateObj}
           onSelect={handleSelect}
           disabled={parsedMinDate ? { before: parsedMinDate } : undefined}
+          modifiers={highlightAvailability ? { booked: fullyBookedDates, available: availableDates } : undefined}
+          modifiersClassNames={highlightAvailability ? { booked: "is-booked-date", available: "is-available-date" } : undefined}
         />
       </PopoverContent>
     </Popover>

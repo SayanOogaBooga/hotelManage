@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 
 import { Toaster } from "react-hot-toast";
 import { FetchInterceptor } from "@/components/FetchInterceptor";
+import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Heaven Valley Retreat - Management",
@@ -31,11 +32,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-slate-50">
-        {children}
-        <div className="print:hidden">
-          <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-          <FetchInterceptor />
-        </div>
+        <Providers>
+          {children}
+          <div className="print:hidden">
+            <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+            <FetchInterceptor />
+          </div>
+        </Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -3,12 +3,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import { BookOpen, Calendar, Download, Search } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function RegisterPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions;
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -82,9 +85,9 @@ export default function RegisterPage() {
         `"${roomNos}"`,
         checkIn,
         checkOut,
-        b.advancePayment || 0,
-        b.remainingAmount !== undefined ? b.remainingAmount : (b.totalAmount || 0),
-        b.totalAmount || 0,
+        permissions?.canViewRevenue ? (b.advancePayment || 0) : "***",
+        permissions?.canViewRevenue ? (b.remainingAmount !== undefined ? b.remainingAmount : (b.totalAmount || 0)) : "***",
+        permissions?.canViewRevenue ? (b.totalAmount || 0) : "***",
         b.paymentMode || ""
       ].join(",");
     });
@@ -225,13 +228,13 @@ export default function RegisterPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-slate-600">
-                        {advance.toFixed(2)}
+                        {permissions?.canViewRevenue ? advance.toFixed(2) : <span className="text-slate-400 tracking-widest">***</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-rose-600">
-                        {balance.toFixed(2)}
+                        {permissions?.canViewRevenue ? balance.toFixed(2) : <span className="text-slate-400 tracking-widest">***</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-600">
-                        {total.toFixed(2)}
+                        {permissions?.canViewRevenue ? total.toFixed(2) : <span className="text-slate-400 tracking-widest">***</span>}
                       </td>
                     </tr>
                   )

@@ -3,31 +3,40 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Leaf, Lock, User, ArrowRight } from "lucide-react";
+import { Leaf, Lock, Mail, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // For now, simple client-side validation to let you into the dashboard!
-    // We can upgrade this to NextAuth + MongoDB later if you need multiple users.
-    setTimeout(() => {
-      setIsLoading(false);
-      if (username === "admin" && password === "admin") {
-        document.cookie = "auth=true; path=/; max-age=86400"; // 1 day expiration
-        router.push("/dashboard");
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        toast.error(res.error);
       } else {
-        toast.error("Invalid credentials.");
+        router.push("/dashboard");
+        toast.success("Welcome back!");
       }
-    }, 800);
+    } catch (error) {
+      toast.error("An error occurred during login.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -57,19 +66,19 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1">
             <label className="text-sm font-semibold text-slate-700 ml-1">
-              Username
+              Email Address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <User size={18} />
+                <Mail size={18} />
               </div>
               <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all placeholder:text-slate-400"
-                placeholder="Enter admin username"
+                placeholder="Enter your email"
               />
             </div>
           </div>
@@ -92,6 +101,12 @@ export default function LoginPage() {
               />
             </div>
           </div>
+
+          {/* <div className="flex justify-end px-1 mt-1">
+            <Link href="/forgot-password" className="text-xs text-primary font-bold hover:underline">
+              Forgot Password?
+            </Link>
+          </div> */}
 
           <motion.button
             whileHover={{ scale: 1.02 }}

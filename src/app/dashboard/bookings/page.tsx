@@ -15,6 +15,7 @@ import {
   BedDouble,
   Edit,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { ReceiptPrint } from "@/components/ReceiptPrint";
 import toast from "react-hot-toast";
 import { playDeleteSound } from "@/lib/sounds";
@@ -22,6 +23,8 @@ import { generatePdfFromElement } from "@/lib/generatePdf";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BookingsPage() {
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions;
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [printBooking, setPrintBooking] = useState<any>(null);
@@ -146,9 +149,15 @@ export default function BookingsPage() {
                     <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-1">
                       Total
                     </p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      ₹{booking.totalAmount}
-                    </p>
+                    {permissions?.canViewRevenue ? (
+                      <p className="text-2xl font-bold text-emerald-600">
+                        ₹{booking.totalAmount}
+                      </p>
+                    ) : (
+                      <p className="text-lg font-bold text-slate-400 tracking-widest">
+                        ***
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -217,21 +226,25 @@ export default function BookingsPage() {
                     <span className="text-xs font-medium text-slate-400">
                       {booking.particulars?.length || 0} items billed
                     </span>
-                    <button
-                      onClick={() => setDeleteConfirmId(booking._id)}
-                      className="text-xs font-medium text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer"
-                      title="Delete booking"
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
+                    {permissions?.canDelete && (
+                      <button
+                        onClick={() => setDeleteConfirmId(booking._id)}
+                        className="text-xs font-medium text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Delete booking"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <Link
-                      href={`/dashboard/billing?id=${booking._id}`}
-                      className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all flex items-center gap-1 hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                      <Edit size={14} /> Edit
-                    </Link>
+                    {permissions?.canEdit && (
+                      <Link
+                        href={`/dashboard/billing?id=${booking._id}`}
+                        className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all flex items-center gap-1 hover:-translate-y-0.5 active:translate-y-0"
+                      >
+                        <Edit size={14} /> Edit
+                      </Link>
+                    )}
                     <button
                       onClick={() => handlePrint(booking)}
                       className="text-sm font-semibold text-primary hover:text-green-700 transition-all flex items-center gap-1 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"

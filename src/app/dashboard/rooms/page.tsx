@@ -12,6 +12,7 @@ import {
   LogOut,
   CheckCircle2,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { playPopSound, playDeleteSound } from "@/lib/sounds";
@@ -37,6 +38,8 @@ interface Room {
 }
 
 export default function RoomsManagement() {
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions;
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newRoomNumber, setNewRoomNumber] = useState("");
@@ -242,13 +245,15 @@ export default function RoomsManagement() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddRoomModalOpen(true)}
-          className="bg-primary text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-        >
-          <Plus size={24} />
-          Add New Room
-        </button>
+        {permissions?.canCreate && (
+          <button
+            onClick={() => setIsAddRoomModalOpen(true)}
+            className="bg-primary text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+          >
+            <Plus size={24} />
+            Add New Room
+          </button>
+        )}
       </div>
 
       {rooms.length > 0 && (
@@ -315,13 +320,15 @@ export default function RoomsManagement() {
                       </h3>
                     </div>
 
-                    <button
-                      onClick={() => confirmDelete(room._id)}
-                      className="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-100 transition-all p-2 rounded-full cursor-pointer hover:scale-110 active:scale-95"
-                      title="Delete Room"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {permissions?.canDelete && (
+                      <button
+                        onClick={() => confirmDelete(room._id)}
+                        className="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-100 transition-all p-2 rounded-full cursor-pointer hover:scale-110 active:scale-95"
+                        title="Delete Room"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
 
                   <div className="p-3 sm:p-6 bg-slate-50 flex-1 flex flex-col justify-center">
@@ -429,31 +436,33 @@ export default function RoomsManagement() {
                     )}
                   </div>
 
-                  <div className="p-3 sm:p-4 bg-white border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {room.status === "Available" ? (
-                      <button
-                        onClick={() =>
-                          handleStatusChange(room._id, "Maintenance")
-                        }
-                        className="col-span-1 sm:col-span-2 bg-amber-100 text-amber-700 py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 hover:bg-amber-200 transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
-                      >
-                        Mark as Maintenance
-                      </button>
-                    ) : room.status === "Occupied" ? (
-                      <div className="col-span-1 sm:col-span-2 text-center text-rose-500 font-medium text-xs sm:text-sm py-2">
-                        {/* Modify checkout date in Create Memo to checkout */}
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() =>
-                          handleStatusChange(room._id, "Available")
-                        }
-                        className="col-span-1 sm:col-span-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 cursor-pointer hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0"
-                      >
-                        Mark Available
-                      </button>
-                    )}
-                  </div>
+                  {permissions?.canEdit && (
+                    <div className="p-3 sm:p-4 bg-white border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {room.status === "Available" ? (
+                        <button
+                          onClick={() =>
+                            handleStatusChange(room._id, "Maintenance")
+                          }
+                          className="col-span-1 sm:col-span-2 bg-amber-100 text-amber-700 py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 hover:bg-amber-200 transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          Mark as Maintenance
+                        </button>
+                      ) : room.status === "Occupied" ? (
+                        <div className="col-span-1 sm:col-span-2 text-center text-rose-500 font-medium text-xs sm:text-sm py-2">
+                          {/* Modify checkout date in Create Memo to checkout */}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleStatusChange(room._id, "Available")
+                          }
+                          className="col-span-1 sm:col-span-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold flex items-center justify-center gap-1 sm:gap-2 cursor-pointer hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          Mark Available
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>

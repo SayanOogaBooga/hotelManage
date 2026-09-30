@@ -12,8 +12,10 @@ import {
   History,
   Menu,
   X,
-  BookOpen
+  BookOpen,
+  Users
 } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -33,11 +35,22 @@ function SidebarContent({
   onClose?: () => void 
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
 
-  const handleLogout = () => {
-    document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push("/");
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" });
   };
+
+  const dynamicNavItems = [...navItems];
+  if (session?.user?.role === "ADMIN") {
+    dynamicNavItems.push({ name: "Users & Roles", href: "/dashboard/users", icon: Users });
+  }
+
+  const permissions = session?.user?.permissions;
+  const filteredNavItems = dynamicNavItems.filter((item) => {
+    if (item.name === "Create Memo" && !permissions?.canCreate) return false;
+    return true;
+  });
 
   return (
     <>
@@ -60,8 +73,8 @@ function SidebarContent({
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
+        {filteredNavItems.map((item) => {
+          const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : (pathname === item.href || pathname.startsWith(item.href + '/'));
           const Icon = item.icon;
           
           return (

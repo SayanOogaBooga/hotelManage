@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -26,6 +27,8 @@ const Rooms3D = dynamic(
 );
 
 export default function DashboardOverview() {
+  const { data: session } = useSession();
+  const permissions = session?.user?.permissions;
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -136,6 +139,10 @@ export default function DashboardOverview() {
     },
   ];
 
+  const visibleStats = permissions?.canViewRevenue
+    ? stats
+    : stats.filter((s) => s.label !== "Total Revenue");
+
   return (
     <div className="space-y-8 pb-12">
       <div>
@@ -148,7 +155,7 @@ export default function DashboardOverview() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {stats.map((stat, idx) => {
+        {visibleStats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
             <motion.div
@@ -231,9 +238,15 @@ export default function DashboardOverview() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-emerald-600">
-                        ₹{booking.totalAmount?.toLocaleString()}
-                      </p>
+                      {permissions?.canViewRevenue ? (
+                        <p className="font-bold text-emerald-600">
+                          ₹{booking.totalAmount?.toLocaleString()}
+                        </p>
+                      ) : (
+                        <p className="font-bold text-slate-400 text-xs tracking-widest">
+                          ***
+                        </p>
+                      )}
                       <p className="text-xs text-slate-400 font-medium">
                         {booking.paymentMode}
                       </p>
@@ -255,15 +268,17 @@ export default function DashboardOverview() {
             Quick Actions
           </h2>
           <div className="space-y-3 flex-1">
-            <Link
-              href="/dashboard/billing"
-              className="w-full text-left px-5 py-4 rounded-xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all font-bold text-slate-700 flex justify-between items-center group block cursor-pointer hover:-translate-y-1 hover:shadow-md active:translate-y-0"
-            >
-              Generate New Bill
-              <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 transform">
-                <ArrowRight size={20} />
-              </span>
-            </Link>
+            {permissions?.canCreate && (
+              <Link
+                href="/dashboard/billing"
+                className="w-full text-left px-5 py-4 rounded-xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all font-bold text-slate-700 flex justify-between items-center group block cursor-pointer hover:-translate-y-1 hover:shadow-md active:translate-y-0"
+              >
+                Generate New Bill
+                <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 transform">
+                  <ArrowRight size={20} />
+                </span>
+              </Link>
+            )}
             <Link
               href="/dashboard/rooms"
               className="w-full text-left px-5 py-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all font-bold text-slate-700 flex justify-between items-center group block cursor-pointer hover:-translate-y-1 hover:shadow-md active:translate-y-0"

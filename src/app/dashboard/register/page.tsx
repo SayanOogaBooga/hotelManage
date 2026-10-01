@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { BookOpen, Calendar, Download, Search } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -66,7 +67,7 @@ export default function RegisterPage() {
 
   const handleExportCSV = () => {
     const headers = [
-      "Sl No", "Date", "Memo No", "Guest Name", "Address", "Contact", 
+      "Sl No", "Date", "Time", "Memo No", "Booked By", "Guest Name", "Address", "Contact", 
       "Room No", "Check In", "Check Out", "Advance (₹)", "Balance (₹)", "Total (₹)", "Mode"
     ];
 
@@ -77,8 +78,10 @@ export default function RegisterPage() {
       
       return [
         index + 1,
-        format(new Date(b.date), "dd/MM/yyyy"),
+        formatInTimeZone(new Date(b.createdAt || b.date), "Asia/Kolkata", "dd/MM/yyyy"),
+        formatInTimeZone(new Date(b.createdAt || b.date), "Asia/Kolkata", "hh:mm a"),
         b.memoNo,
+        `"${b.bookedBy || ""}"`,
         `"${b.guestName}"`,
         `"${b.address || ""}"`,
         b.mobileNo,
@@ -186,7 +189,7 @@ export default function RegisterPage() {
               <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-4 py-3 border-b border-slate-200 w-12 text-center">#</th>
-                  <th className="px-4 py-3 border-b border-slate-200">Date</th>
+                  <th className="px-4 py-3 border-b border-slate-200">Date & Time</th>
                   <th className="px-4 py-3 border-b border-slate-200">Memo No</th>
                   <th className="px-4 py-3 border-b border-slate-200">Guest Name</th>
                   <th className="px-4 py-3 border-b border-slate-200">Room(s)</th>
@@ -206,10 +209,18 @@ export default function RegisterPage() {
                   return (
                     <tr key={b._id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-center text-slate-400 font-medium">{idx + 1}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">
-                        {format(new Date(b.date), "dd MMM yy")}
+                      <td className="px-4 py-3 text-slate-700">
+                        <div className="font-semibold">{formatInTimeZone(new Date(b.createdAt || b.date), "Asia/Kolkata", "dd MMM yy")}</div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">{formatInTimeZone(new Date(b.createdAt || b.date), "Asia/Kolkata", "hh:mm a")}</div>
                       </td>
-                      <td className="px-4 py-3 text-slate-500">{b.memoNo}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        <div>{b.memoNo}</div>
+                        {b.bookedBy && (
+                          <div className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded inline-block mt-1 uppercase">
+                            By {b.bookedBy}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-bold text-slate-800">
                         {b.guestName}
                         <div className="text-[10px] font-normal text-slate-400 mt-0.5 flex flex-col">

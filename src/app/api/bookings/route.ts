@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import Booking from "@/models/Booking";
 import "@/models/Room"; // Import for side-effects to register schema
@@ -8,6 +10,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    const session = await getServerSession(authOptions);
+    if (session?.user?.name) {
+      data.bookedBy = session.user.name;
+    }
     await connectToDatabase();
     
     // Ensure memoNo is unique. In a real app, you might auto-increment this.

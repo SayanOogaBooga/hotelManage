@@ -101,9 +101,22 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-100">
-        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0">
-          <LogOut size={18} />
+      <div className="p-4 border-t border-slate-100 space-y-3">
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shadow-inner">
+            {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-700 leading-tight">
+              {session?.user?.name || "User"}
+            </span>
+            <span className="text-[10px] font-medium text-slate-500 leading-tight mt-0.5">
+              {session?.user?.role || "STAFF"}
+            </span>
+          </div>
+        </div>
+        <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all cursor-pointer hover:-translate-y-0.5 active:translate-y-0 border border-rose-100">
+          <LogOut size={16} />
           Logout
         </button>
       </div>

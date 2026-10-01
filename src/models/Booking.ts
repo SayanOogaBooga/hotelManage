@@ -25,6 +25,7 @@ export interface IBooking extends Document {
   advancePayment: number;
   remainingAmount: number;
   paymentMode: "Cash" | "UPI" | "Bank Transfer" | "Others";
+  bookedBy?: string;
 }
 
 const ParticularSchema = new Schema<IParticular>({
@@ -56,6 +57,7 @@ const BookingSchema = new Schema<IBooking>({
     enum: ["Cash", "UPI", "Bank Transfer", "Others"], 
     required: true 
   },
+  bookedBy: { type: String, required: false },
 }, { timestamps: true });
 
 if (mongoose.models.Booking) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import Link from "next/link";
 import {
   History,
@@ -133,13 +134,18 @@ export default function BookingsPage() {
               >
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                         Memo {booking.memoNo}
                       </span>
-                      <span className="text-sm text-slate-400 font-medium">
-                        {format(new Date(booking.date), "dd MMM yyyy")}
+                      <span className="text-sm text-slate-400 font-medium whitespace-nowrap">
+                        {formatInTimeZone(new Date(booking.createdAt), "Asia/Kolkata", "dd MMM yyyy, hh:mm a")}
                       </span>
+                      {booking.bookedBy && (
+                        <span className="bg-blue-50 text-blue-600 border border-blue-100 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          By {booking.bookedBy}
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-xl font-bold text-slate-800">
                       {booking.guestName}

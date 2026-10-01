@@ -723,6 +723,10 @@ export default function BillingPage() {
       <ReceiptPrint
         booking={{
           ...watch(),
+          roomsBooked: (watch("roomsBooked") || []).map((id: any) => {
+            const found = availableRooms.find((r) => r._id === id);
+            return found ? found : id;
+          }),
           particulars: calculatedParticulars,
           subTotal,
           totalAmount,

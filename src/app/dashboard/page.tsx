@@ -32,8 +32,6 @@ export default function DashboardOverview() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-
-
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -255,7 +253,7 @@ export default function DashboardOverview() {
 
       {/* 3D Rooms section  */}
 
-      {data?.stats?.totalRooms > 0 && (
+      {/* {data?.stats?.totalRooms > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -264,7 +262,7 @@ export default function DashboardOverview() {
         >
           <Rooms3D />
         </motion.div>
-      )}
+      )} */}
     </div>
   );
 }
